@@ -21,11 +21,24 @@ RUN echo '<?xml version="1.0" encoding="utf-8"?>' > /tmp/nuget.config && \
     echo '  </packageSources>' >> /tmp/nuget.config && \
     echo '</configuration>' >> /tmp/nuget.config
 
-# Copy source code (loại trừ thư mục có thể chứa cache)
+# Copy source code
 COPY YoutubeDownloader.sln ./
-COPY Directory.Build.props ./
 COPY YoutubeDownloader.Web/*.csproj YoutubeDownloader.Web/
 COPY YoutubeDownloader.Core/*.csproj YoutubeDownloader.Core/
+
+# Tạo Directory.Build.props tùy chỉnh để tránh lỗi encoding
+RUN echo '<Project>' > Directory.Build.props && \
+    echo '  <PropertyGroup>' >> Directory.Build.props && \
+    echo '    <TargetFramework>net9.0</TargetFramework>' >> Directory.Build.props && \
+    echo '    <Version>999.9.9-dev</Version>' >> Directory.Build.props && \
+    echo '    <Company>Tyrrrz</Company>' >> Directory.Build.props && \
+    echo '    <Copyright>Copyright (C) Oleksii Holub</Copyright>' >> Directory.Build.props && \
+    echo '    <LangVersion>preview</LangVersion>' >> Directory.Build.props && \
+    echo '    <Nullable>enable</Nullable>' >> Directory.Build.props && \
+    echo '    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>' >> Directory.Build.props && \
+    echo '    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>' >> Directory.Build.props && \
+    echo '  </PropertyGroup>' >> Directory.Build.props && \
+    echo '</Project>' >> Directory.Build.props
 
 # Restore với config mới
 RUN dotnet restore YoutubeDownloader.Web/YoutubeDownloader.Web.csproj \
