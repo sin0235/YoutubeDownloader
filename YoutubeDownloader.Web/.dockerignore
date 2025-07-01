@@ -1,0 +1,36 @@
+# Directories
+**/bin/
+**/obj/
+**/out/
+**/publish/
+**/TestResults/
+**/.vs/
+**/.vscode/
+**/.idea/
+
+# Files
+**/*.trx
+**/*.log
+**/*.tmp
+**/*.temp
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# Node.js (if any)
+**/node_modules/
+**/npm-debug.log
+
+# Others
+**/.env
+**/downloads/
+**/wwwroot/downloads/ 
