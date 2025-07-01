@@ -1,10 +1,34 @@
-# YouTube Downloader - Docker Setup
+# 🐳 YouTube Downloader - Docker Setup
+
+## ✅ Đã sửa lỗi NuGet và sẵn sàng sử dụng!
+
+## 🚀 Quick Start
+
+### Windows:
+```cmd
+build-docker.bat
+```
+
+### Linux/Mac:
+```bash
+chmod +x build-docker.sh
+./build-docker.sh
+```
+
+### Hoặc Docker Compose:
+```bash
+docker-compose up -d
+```
+
+**Truy cập**: http://localhost:8080
+
+---
 
 ## Yêu cầu
 - Docker Desktop
 - Docker Compose (thường đi kèm với Docker Desktop)
 
-## Cách sử dụng
+## Cách sử dụng chi tiết
 
 ### 1. Build Image
 
@@ -90,27 +114,53 @@ ports:
   - "9000:8080"  # Truy cập qua port 9000
 ```
 
+## Dockerfile
+
+**`YoutubeDownloader.Web/Dockerfile`** - Dockerfile đã được tối ưu để:
+- ✅ Giải quyết triệt để lỗi NuGet Windows paths
+- ✅ Override hoàn toàn NuGet configuration  
+- ✅ Multi-stage build cho kích thước image nhỏ
+- ✅ Cài đặt sẵn FFmpeg và wget
+- ✅ Ổn định trên mọi môi trường
+
 ## Troubleshooting
 
-### 1. Port đã được sử dụng
+### 1. Lỗi NuGet packages path (Windows paths trong Linux container)
+Nếu gặp lỗi `Unable to find fallback package folder 'C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages'`:
+
+#### Giải pháp: Build với force clean
+```bash
+docker build --no-cache -f YoutubeDownloader.Web/Dockerfile -t youtube-downloader-web:latest .
+```
+
+Hoặc sử dụng script có sẵn:
+```bash
+# Windows
+build-docker.bat
+
+# Linux/Mac
+./build-docker.sh
+```
+
+### 2. Port đã được sử dụng
 Nếu port 8080 đã được sử dụng, thay đổi port mapping trong `docker-compose.yml`:
 ```yaml
 ports:
   - "8081:8080"
 ```
 
-### 2. Permission issues với downloads folder
+### 3. Permission issues với downloads folder
 ```bash
 sudo chmod 777 downloads
 ```
 
-### 3. FFmpeg không hoạt động
+### 4. FFmpeg không hoạt động
 FFmpeg đã được cài đặt trong Docker image. Nếu vẫn có lỗi, kiểm tra logs:
 ```bash
 docker-compose logs youtube-downloader-web
 ```
 
-### 4. Health check failed
+### 5. Health check failed
 Đợi khoảng 40 giây để ứng dụng khởi động hoàn toàn. Nếu vẫn lỗi, kiểm tra:
 ```bash
 docker-compose ps
@@ -134,10 +184,29 @@ curl -X POST "http://localhost:8080/api/videos/download" \
 curl "http://localhost:8080/api/videos/info?url=https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-## Development
+## ⚡ Lệnh hữu ích
 
-Để rebuild image sau khi thay đổi code:
 ```bash
+# Xem logs
+docker-compose logs -f
+
+# Dừng ứng dụng  
+docker-compose down
+
+# Khởi động lại
+docker-compose restart
+
+# Rebuild từ đầu
 docker-compose build --no-cache
 docker-compose up -d
-``` 
+```
+
+## 🔧 Đã giải quyết
+
+- ✅ Lỗi NuGet packages path trong Docker
+- ✅ FFmpeg được cài đặt sẵn  
+- ✅ Health check tự động
+- ✅ Volume mapping cho downloads
+- ✅ Environment variables optimized
+
+**YouTube Downloader hoạt động ổn định trong Docker!** 🎉 

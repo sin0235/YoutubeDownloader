@@ -1,32 +1,55 @@
-# Build stage
+# Minimal Dockerfile - Giải quyết triệt để lỗi NuGet
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy solution file và project files
+# Thiết lập hoàn toàn environment để tránh Windows paths
+ENV NUGET_PACKAGES=/tmp/nuget-packages
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+ENV HOME=/tmp
+ENV DOTNET_ROOT=/usr/share/dotnet
+
+# Tạo NuGet.config mới để override mọi settings
+RUN echo '<?xml version="1.0" encoding="utf-8"?>' > /tmp/nuget.config && \
+    echo '<configuration>' >> /tmp/nuget.config && \
+    echo '  <config>' >> /tmp/nuget.config && \
+    echo '    <add key="globalPackagesFolder" value="/tmp/nuget-packages" />' >> /tmp/nuget.config && \
+    echo '  </config>' >> /tmp/nuget.config && \
+    echo '  <packageSources>' >> /tmp/nuget.config && \
+    echo '    <clear />' >> /tmp/nuget.config && \
+    echo '    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />' >> /tmp/nuget.config && \
+    echo '  </packageSources>' >> /tmp/nuget.config && \
+    echo '</configuration>' >> /tmp/nuget.config
+
+# Copy source code (loại trừ thư mục có thể chứa cache)
 COPY YoutubeDownloader.sln ./
-COPY YoutubeDownloader.Web/YoutubeDownloader.Web.csproj YoutubeDownloader.Web/
-COPY YoutubeDownloader.Core/YoutubeDownloader.Core.csproj YoutubeDownloader.Core/
-COPY NuGet.config ./
 COPY Directory.Build.props ./
+COPY YoutubeDownloader.Web/*.csproj YoutubeDownloader.Web/
+COPY YoutubeDownloader.Core/*.csproj YoutubeDownloader.Core/
 
-# Restore dependencies
-RUN dotnet restore YoutubeDownloader.Web/YoutubeDownloader.Web.csproj
+# Restore với config mới
+RUN dotnet restore YoutubeDownloader.Web/YoutubeDownloader.Web.csproj \
+    --configfile /tmp/nuget.config \
+    --packages /tmp/nuget-packages \
+    --force \
+    --no-cache
 
-# Copy source code
+# Copy rest of source code
 COPY YoutubeDownloader.Web/ YoutubeDownloader.Web/
 COPY YoutubeDownloader.Core/ YoutubeDownloader.Core/
 
-# Build application
-RUN dotnet build YoutubeDownloader.Web/YoutubeDownloader.Web.csproj -c Release --no-restore
-
-# Publish application
-RUN dotnet publish YoutubeDownloader.Web/YoutubeDownloader.Web.csproj -c Release -o /app/publish --no-restore
+# Build và publish
+RUN dotnet publish YoutubeDownloader.Web/YoutubeDownloader.Web.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    --packages /tmp/nuget-packages
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-# Cài đặt FFmpeg, wget và các dependencies cần thiết
+# Cài đặt FFmpeg và wget
 RUN apt-get update && \
     apt-get install -y ffmpeg wget && \
     apt-get clean && \
@@ -43,9 +66,10 @@ RUN mkdir -p /app/downloads && \
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
 
-# Expose ports
+# Expose port
 EXPOSE 8080
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/swagger/index.html || exit 1
 
