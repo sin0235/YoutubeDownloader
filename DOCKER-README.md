@@ -1,6 +1,6 @@
-# 🐳 YouTube Downloader - Docker Setup
+# 🐳 YouTube Downloader - Docker Setup (.NET 8.0)
 
-## ✅ Đã sửa lỗi NuGet và sẵn sàng sử dụng!
+## ✅ Đã chuyển sang .NET 8.0 và sẵn sàng sử dụng!
 
 ## 🚀 Quick Start
 
@@ -116,12 +116,12 @@ ports:
 
 ## Dockerfile
 
-**`YoutubeDownloader.Web/Dockerfile`** - Dockerfile đã được tối ưu để:
-- ✅ Giải quyết triệt để lỗi NuGet Windows paths
-- ✅ Override hoàn toàn NuGet configuration  
+**`YoutubeDownloader.Web/Dockerfile`** - Dockerfile cho .NET 8.0:
+- ✅ Target Framework: .NET 8.0 (LTS)
+- ✅ Giải quyết lỗi NuGet Windows paths
 - ✅ Multi-stage build cho kích thước image nhỏ
 - ✅ Cài đặt sẵn FFmpeg và wget
-- ✅ Ổn định trên mọi môi trường
+- ✅ Simple và ổn định trên mọi môi trường
 
 ## Troubleshooting
 
@@ -203,10 +203,11 @@ docker-compose up -d
 
 ## 🔧 Đã giải quyết
 
+- ✅ **Migrated to .NET 8.0 LTS** - Stable long-term support
 - ✅ Lỗi NuGet packages path trong Docker
 - ✅ FFmpeg được cài đặt sẵn  
 - ✅ Health check tự động
 - ✅ Volume mapping cho downloads
 - ✅ Environment variables optimized
 
-**YouTube Downloader hoạt động ổn định trong Docker!** 🎉 
+**YouTube Downloader hoạt động ổn định với .NET 8.0 trong Docker!** 🎉 
