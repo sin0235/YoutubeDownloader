@@ -53,7 +53,7 @@ if (app.Environment.IsProduction())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Commented out for HTTP-only deployment
 app.UseCors("AllowAll");
 app.UseStaticFiles();
 app.UseRouting();
