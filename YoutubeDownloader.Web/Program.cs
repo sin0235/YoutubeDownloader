@@ -3,6 +3,9 @@ using YoutubeDownloader.Core.Resolving;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure for IIS
+builder.WebHost.UseIISIntegration();
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -37,6 +40,17 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+// For production, still enable Swagger for API documentation
+if (app.Environment.IsProduction())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "YoutubeDownloader API V1");
+        c.RoutePrefix = "api-docs";
+    });
 }
 
 app.UseHttpsRedirection();

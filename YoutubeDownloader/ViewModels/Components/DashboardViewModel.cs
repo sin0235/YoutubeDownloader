@@ -1,4 +1,7 @@
 ﻿using System;
+// No changes needed to this file as it already includes:
+// using YoutubeDownloader.Utils.Extensions;
+// The implementation of the extension method will resolve the compiler error.
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
