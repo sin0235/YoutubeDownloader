@@ -1,5 +1,5 @@
 # Quick Setup script cho IIS deployment
-# Chạy với quyền Administrator
+# Chay voi quyen Administrator
 
 param(
     [string]$SiteName = "YoutubeDownloader",
@@ -10,86 +10,101 @@ param(
 
 Write-Host "=== Quick Setup cho IIS Deployment ===" -ForegroundColor Green
 
-# Kiểm tra quyền Administrator
-if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Host "Script này cần chạy với quyền Administrator!" -ForegroundColor Red
-    Write-Host "Hãy mở PowerShell với 'Run as Administrator' và chạy lại." -ForegroundColor Yellow
+# Kiem tra quyen Administrator
+$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+$isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-NOT $isAdmin) {
+    Write-Host "Script nay can chay voi quyen Administrator!" -ForegroundColor Red
+    Write-Host "Hay mo PowerShell voi 'Run as Administrator' va chay lai." -ForegroundColor Yellow
     exit 1
 }
 
 # Import WebAdministration module
-Import-Module WebAdministration -ErrorAction SilentlyContinue
-if (-not (Get-Module WebAdministration)) {
-    Write-Host "Không thể load WebAdministration module. Hãy đảm bảo IIS đã được cài đặt." -ForegroundColor Red
+try {
+    Import-Module WebAdministration -ErrorAction Stop
+} catch {
+    Write-Host "Khong the load WebAdministration module." -ForegroundColor Red
+    Write-Host "Hay dam bao IIS da duoc cai dat." -ForegroundColor Red
+    Write-Host "Chay lenh: Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole -All" -ForegroundColor Yellow
     exit 1
 }
 
 try {
-    # 1. Tạo thư mục physical path
-    Write-Host "`n1. Tạo thư mục website..." -ForegroundColor Cyan
+    # 1. Tao thu muc physical path
+    Write-Host ""
+    Write-Host "1. Tao thu muc website..." -ForegroundColor Cyan
     if (!(Test-Path $PhysicalPath)) {
-        New-Item -ItemType Directory -Path $PhysicalPath -Force
-        Write-Host "Đã tạo thư mục: $PhysicalPath" -ForegroundColor Green
+        New-Item -ItemType Directory -Path $PhysicalPath -Force | Out-Null
+        Write-Host "Da tao thu muc: $PhysicalPath" -ForegroundColor Green
     } else {
-        Write-Host "Thư mục đã tồn tại: $PhysicalPath" -ForegroundColor Yellow
+        Write-Host "Thu muc da ton tai: $PhysicalPath" -ForegroundColor Yellow
     }
 
-    # 2. Tạo Application Pool
-    Write-Host "`n2. Tạo Application Pool..." -ForegroundColor Cyan
+    # 2. Tao Application Pool
+    Write-Host ""
+    Write-Host "2. Tao Application Pool..." -ForegroundColor Cyan
     if (Get-IISAppPool -Name $AppPoolName -ErrorAction SilentlyContinue) {
-        Write-Host "Application Pool '$AppPoolName' đã tồn tại" -ForegroundColor Yellow
+        Write-Host "Application Pool '$AppPoolName' da ton tai" -ForegroundColor Yellow
         Remove-WebAppPool -Name $AppPoolName -Confirm:$false
-        Write-Host "Đã xóa Application Pool cũ" -ForegroundColor Yellow
+        Write-Host "Da xoa Application Pool cu" -ForegroundColor Yellow
     }
     
     New-WebAppPool -Name $AppPoolName
     Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "managedRuntimeVersion" -Value ""
     Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "startMode" -Value "AlwaysRunning"
     Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "processModel.idleTimeout" -Value "00:00:00"
-    Write-Host "Đã tạo Application Pool: $AppPoolName" -ForegroundColor Green
+    Write-Host "Da tao Application Pool: $AppPoolName" -ForegroundColor Green
 
-    # 3. Tạo Website
-    Write-Host "`n3. Tạo Website..." -ForegroundColor Cyan
+    # 3. Tao Website
+    Write-Host ""
+    Write-Host "3. Tao Website..." -ForegroundColor Cyan
     if (Get-Website -Name $SiteName -ErrorAction SilentlyContinue) {
-        Write-Host "Website '$SiteName' đã tồn tại" -ForegroundColor Yellow
+        Write-Host "Website '$SiteName' da ton tai" -ForegroundColor Yellow
         Remove-Website -Name $SiteName -Confirm:$false
-        Write-Host "Đã xóa Website cũ" -ForegroundColor Yellow
+        Write-Host "Da xoa Website cu" -ForegroundColor Yellow
     }
     
     New-Website -Name $SiteName -Port $Port -PhysicalPath $PhysicalPath -ApplicationPool $AppPoolName
-    Write-Host "Đã tạo Website: $SiteName trên port $Port" -ForegroundColor Green
+    Write-Host "Da tao Website: $SiteName tren port $Port" -ForegroundColor Green
 
-    # 4. Cấu hình quyền truy cập
-    Write-Host "`n4. Cấu hình quyền truy cập..." -ForegroundColor Cyan
+    # 4. Cau hinh quyen truy cap
+    Write-Host ""
+    Write-Host "4. Cau hinh quyen truy cap..." -ForegroundColor Cyan
     $acl = Get-Acl $PhysicalPath
     $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("IIS_IUSRS","FullControl","ContainerInherit,ObjectInherit","None","Allow")
     $acl.SetAccessRule($accessRule)
     Set-Acl $PhysicalPath $acl
-    Write-Host "Đã cấp quyền cho IIS_IUSRS" -ForegroundColor Green
+    Write-Host "Da cap quyen cho IIS_IUSRS" -ForegroundColor Green
 
-    # 5. Tạo thư mục logs
-    Write-Host "`n5. Tạo thư mục logs..." -ForegroundColor Cyan
+    # 5. Tao thu muc logs
+    Write-Host ""
+    Write-Host "5. Tao thu muc logs..." -ForegroundColor Cyan
     $logsPath = Join-Path $PhysicalPath "logs"
     if (!(Test-Path $logsPath)) {
-        New-Item -ItemType Directory -Path $logsPath -Force
+        New-Item -ItemType Directory -Path $logsPath -Force | Out-Null
     }
     $acl = Get-Acl $logsPath
     $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("IIS_IUSRS","FullControl","ContainerInherit,ObjectInherit","None","Allow")
     $acl.SetAccessRule($accessRule)
     Set-Acl $logsPath $acl
-    Write-Host "Đã tạo và cấu hình thư mục logs" -ForegroundColor Green
+    Write-Host "Da tao va cau hinh thu muc logs" -ForegroundColor Green
 
-    Write-Host "`n=== Setup hoàn tất! ===" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "=== Setup hoan tat! ===" -ForegroundColor Green
     Write-Host "Website: $SiteName" -ForegroundColor Yellow
     Write-Host "Application Pool: $AppPoolName" -ForegroundColor Yellow
     Write-Host "Physical Path: $PhysicalPath" -ForegroundColor Yellow
     Write-Host "Port: $Port" -ForegroundColor Yellow
-    Write-Host "`nBước tiếp theo:" -ForegroundColor Yellow
-    Write-Host "1. Chạy script Deploy-IIS.ps1 để build và publish ứng dụng" -ForegroundColor White
-    Write-Host "2. Copy files từ thư mục publish đến $PhysicalPath" -ForegroundColor White
-    Write-Host "3. Truy cập http://localhost:$Port để kiểm tra" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Buoc tiep theo:" -ForegroundColor Yellow
+    Write-Host "1. Chay script Deploy-IIS.ps1 de build va publish ung dung" -ForegroundColor White
+    Write-Host "2. Copy files tu thu muc publish den $PhysicalPath" -ForegroundColor White
+    Write-Host "3. Truy cap http://localhost:$Port de kiem tra" -ForegroundColor White
 
 } catch {
-    Write-Host "`nLỗi trong quá trình setup: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Loi trong qua trinh setup: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 } 
